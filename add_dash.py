@@ -56,24 +56,63 @@ def display_page(pathname):
 def layout_cantidad_producto():
     return html.Div([
         html.H3('Distribución de la Tarifa por Puerto de Embarque'),
-        dcc.Graph(id='fare-distribution', figure=data_cantidad_producto())
+        dcc.Graph(id='fare-distribution', figure=data_cantidad_producto()),
+        dcc.Graph(id='fare-distribution-bar', figure=data_cantidad_producto_bar()),
+        dcc.Graph(id='fare-distribution-monto', figure=data_cantidad_monto_bar())
     ])
 
 def data_cantidad_producto():
     df = pd.read_sql('''SELECT product_id, count(product_id) as cantidad, SUM(price) 
                     FROM ecommerce_events GROUP BY product_id ORDER BY sum(price) DESC LIMIT 5''', con=db_config)
     fig = px.pie(df, values='cantidad', names='product_id', title='Cantidad de productos vendidos')
+    
+    return fig
+
+def data_cantidad_producto_bar():
+    df = pd.read_sql('''SELECT product_id, count(product_id) as cantidad, SUM(price) 
+                    FROM ecommerce_events GROUP BY product_id ORDER BY sum(price) DESC LIMIT 5''', con=db_config)
+    fig = px.bar(df, y='cantidad', x='product_id')
+    return fig
+
+def data_cantidad_monto_bar():
+    df = pd.read_sql('''SELECT product_id, count(product_id) as cantidad, SUM(price) as total
+                    FROM ecommerce_events GROUP BY product_id ORDER BY sum(price) DESC LIMIT 5''', con=db_config)
+    fig = px.bar(df, y='total', x='product_id', color='cantidad')
     return fig
 
 ################################
 def layout_cantidad_evento():
     return html.Div([
         html.H3('Distribución de la Tarifa por Puerto de Embarque'),
-        dcc.Graph(id='cantidad-evento', figure=data_cantidad_evento())
+        dcc.Graph(id='cantidad-evento', figure=data_cantidad_evento()),
+        dcc.Graph(id='cantidad-hora-remove', figure=data_cantidad_hora_remove()),
+        dcc.Graph(id='cantidad-hora-view', figure=data_cantidad_hora_view()),
+        dcc.Graph(id='cantidad-hora-cart', figure=data_cantidad_hora_cart()),
+        dcc.Graph(id='cantidad-hora-purch', figure=data_cantidad_hora_purchase())
     ])
 def data_cantidad_evento():
     df = pd.read_sql('''SELECT COUNT(product_id) as cantidad, SUM(price) as total, event_type FROM ecommerce_events GROUP BY event_type''', con=db_config)
     fig = px.pie(df, values='cantidad', names='event_type', title='Cantidad de productos por evento')
+    return fig
+
+def data_cantidad_hora_remove():
+    df = pd.read_sql('''SELECT HOUR(event_time) as hora, COUNT(product_id) as cantidad FROM ecommerce_events where event_type = 'remove_from_cart' GROUP BY HOUR(event_time)''', con=db_config)
+    fig = fig = px.line(df, x='hora', y='cantidad', title='Cantidad de removidos por hora')
+    return fig
+
+def data_cantidad_hora_view():
+    df = pd.read_sql('''SELECT HOUR(event_time) as hora, COUNT(product_id) as cantidad FROM ecommerce_events where event_type = 'view' GROUP BY HOUR(event_time)''', con=db_config)
+    fig = fig = px.line(df, x='hora', y='cantidad', title='Cantidad de vistos por hora')
+    return fig
+
+def data_cantidad_hora_cart():
+    df = pd.read_sql('''SELECT HOUR(event_time) as hora, COUNT(product_id) as cantidad FROM ecommerce_events where event_type = 'cart' GROUP BY HOUR(event_time)''', con=db_config)
+    fig = fig = px.line(df, x='hora', y='cantidad', title='Cantidad de seleccionados por hora')
+    return fig
+
+def data_cantidad_hora_purchase():
+    df = pd.read_sql('''SELECT HOUR(event_time) as hora, COUNT(product_id) as cantidad FROM ecommerce_events where event_type = 'purchase' GROUP BY HOUR(event_time)''', con=db_config)
+    fig = fig = px.line(df, x='hora', y='cantidad', title='Cantidad de productos por comprados')
     return fig
 
 ################################
